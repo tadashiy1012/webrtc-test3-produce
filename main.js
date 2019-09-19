@@ -13,36 +13,34 @@ ws.onopen = () => {
 ws.onmessage = (ev) => {
     const data = JSON.parse(ev.data);
     if (data.id && data.id !== id) {
-        console.log(ev);
+        console.log(ev, data);
+        const pc = pclist[data.id] || makePc(data.id);
+        console.log(pc);
+        if (data.offer) {
+            const offer = new RTCSessionDescription({
+                type: 'offer',
+                sdp: data.offer
+            });
+            (async () => {
+                await pc.setRemoteDescription(offer);
+                console.log('set remote desc');
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                const json = {id, answer, toId: data.id, to: 'default@890'};
+                ws.send(JSON.stringify(json));
+                console.log('send answer');
+            })();
+        }
         if (data.candidate) {
-            const pc = pclist[data.id] || makePc(data.id);
-            console.log(pc);
             const candidate = new RTCIceCandidate({
                 candidate: data.candidate.candidate,
                 sdpMLineIndex: data.candidate.sdpMLineIndex,
                 sdpMid: data.candidate.sdpMid
             });
-            if (!pc.remoteDescription) {
-                const offer = new RTCSessionDescription({
-                    type: 'offer',
-                    sdp: data.sdp
-                });
-                (async () => {
-                    await pc.setRemoteDescription(offer);
-                    await pc.addIceCandidate(candidate);
-                    console.log('set remote desc');
-                    const answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-                    const json = {id, answer, toId: data.id, to: 'default@890'};
-                    ws.send(JSON.stringify(json));
-                    console.log('send answer');
-                })();
-            } else {
-                (async () => {
-                    await pc.addIceCandidate(candidate);
-                    console.log('add ice candidate');
-                })();
-            }
+            (async () => {
+                await pc.addIceCandidate(candidate);
+                console.log('add ice candidate');
+            })();
         }
     }
 };
