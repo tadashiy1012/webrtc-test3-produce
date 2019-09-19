@@ -52,8 +52,7 @@ function makePc(tgtId) {
     pc.onicecandidate = (ev) => {
         console.log(ev);
         if (ev.candidate) {
-            const sdp = pc.localDescription.sdp;
-            const json = {id, toId: tgtId, candidate: ev.candidate, sdp, to: 'default@890'};
+            const json = {id, toId: tgtId, candidate: ev.candidate, to: 'default@890'};
             ws.send(JSON.stringify(json));
             console.log('send candidate:' + tgtId);
         }
